@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 public class AnimationManager : SingletonBase<AnimationManager>
 {
@@ -49,13 +50,14 @@ public class AnimationManager : SingletonBase<AnimationManager>
         animations[AnimationEnum.VICTORY_POSE_BACK_FLIP]    = "activity/victory-pose-back-flip";
     }
 
-    public string GetAnimation(AnimationEnum type)
+    public string GetAnimationName(AnimationEnum type)
     {
-        if (animations.TryGetValue(type, out var animation))
-        {
-            return animation;
-        }
-        return string.Empty;
+        return animations.TryGetValue(type, out var animation) ? animation : string.Empty;
+    }
+
+    public AnimationEnum GetAnimationType(string name)
+    {
+        return animations.FirstOrDefault(x => x.Value.Equals(name)).Key;
     }
 }
 
