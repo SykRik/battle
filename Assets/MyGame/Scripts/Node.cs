@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class Node
 {
@@ -12,6 +13,7 @@ public class Node
     public Node     down    = null;
     public Node     left    = null;
     public Node     right   = null;
+    public List<Character> characters = new List<Character>();
 
     public Node(int id, int row, int col, Vector3 pos)
     {
