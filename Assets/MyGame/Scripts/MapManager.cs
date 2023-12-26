@@ -56,4 +56,12 @@ public class MapManager : SingletonMono<MapManager>
 
         return Tuple.Create(up, down, right, left);
     }
+
+    public void Reset()
+    {
+        foreach (var node in nodes.Values)
+        {
+            node.Characters.Clear();
+        }
+    }
 }

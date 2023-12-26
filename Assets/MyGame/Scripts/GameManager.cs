@@ -17,6 +17,9 @@ public class GameManager : SingletonMono<GameManager>
 
     #region ===== Properties =====
 
+    public HeroData DataAttacker => dataAttacker;
+    public HeroData DataDefender => dataDefender;
+
     #endregion
 
     #region ===== Methods =====
@@ -33,7 +36,7 @@ public class GameManager : SingletonMono<GameManager>
         {
             AxieID = "2724598",
             Genes = "0x18000000000001000240a050c210000000010008286045040001000c08814302000100042021430c0001000c2861430a0001000c3061830c0001000c08404302",
-            HP = 16
+            HP = 32
         };
 
         Mixer.Init();

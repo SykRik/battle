@@ -1,193 +1,66 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-
-public class CharacterAttacker : Character
-{
-    public override Character FindTarget()
-    {
-        var characters = CharacterManager.Instance.defenders;
-        var charactersLive = characters == null || characters.Count == 0 ? null : characters.Where(x => x.hp > 0).ToList();
-        var charactersClose = charactersLive == null || charactersLive.Count == 0 ? null : charactersLive.OrderBy(x => Mathf.Abs(x.node.col - node.col) + Mathf.Abs(x.node.row - node.row)).ToList();
-        var character = charactersClose == null || charactersClose.Count == 0 ? null : charactersClose.First();
-
-        return character;
-    }
-    public override Character FindCloseTarget()
-    {
-        var characters = CharacterManager.Instance.defenders;
-        var charactersLive = characters == null || characters.Count == 0 ? null : characters.Where(x => x.hp > 0).ToList();
-        var charactersClose = charactersLive == null || charactersLive.Count == 0 ? null : charactersLive.Where(x => Mathf.Abs(x.node.col - node.col) + Mathf.Abs(x.node.row - node.row) == 1).ToList();
-        var character = charactersClose == null || charactersClose.Count == 0 ? null : charactersClose.First();
-
-        return character;
-    }
-}
-
-public class CharacterDefender : Character
-{
-    public override Character FindTarget()
-    {
-        var characters = CharacterManager.Instance.attackers;
-        var characterLive = characters == null || characters.Count == 0 ? null : characters.Where(x => x.GetComponent<Character>().hp > 0).ToList();
-        var characterClose = characterLive == null || characterLive.Count == 0 ? null : characterLive.OrderBy(x => Mathf.Abs(x.node.col - node.col) + Mathf.Abs(x.node.row - node.row)).ToList();
-        var character = characterClose == null || characterClose.Count == 0 ? null : characterClose.First();
-
-        return character;
-    }
-    public override Character FindCloseTarget()
-    {
-        var characters = CharacterManager.Instance.attackers;
-        var characterLive = characters == null || characters.Count == 0 ? null : characters.Where(x => x.GetComponent<Character>().hp > 0).ToList();
-        var characterClose = characterLive == null || characterLive.Count == 0 ? null : characterLive.Where(x => Mathf.Abs(x.node.col - node.col) + Mathf.Abs(x.node.row - node.row) == 1).ToList();
-        var character = characterClose == null || characterClose.Count == 0 ? null : characterClose.First();
-
-        return character;
-    }
-}
-
-
-public abstract class Character : MonoBehaviour
-{
-    public Node node = null;
-    public int hp = 10;
-    public bool alive = true;
-
-    public void SetNode(Node node)
-    {
-        if (node == null)
-            return;
-        if (node.characters == null)
-            return;
-        if (node.characters.Count > 0)
-            return;
-
-        if (this.node != null && this.node.characters != null)
-            this.node.characters.Remove(this);
-        this.node = node;
-        node.characters.Add(this);
-        LeanTween.move(gameObject, node.pos, 0.5f);
-    }
-
-    public void DealDamage()
-    {
-        if (alive)
-        {
-            if (hp <= 0)
-                return;
-            var target = FindCloseTarget();
-            if (target == null)
-                return;
-            target.TakeDamage(1);
-        }
-    }
-
-    public void TakeDamage(int damage)
-    {
-        if (alive)
-        {
-            if (hp > 0)
-                hp -= damage;
-        }
-    }
-
-    public void CheckHealth()
-    {
-        if (alive)
-        {
-            if (hp <= 0)
-            {
-                alive = false;
-                gameObject.SetActive(false);
-                node.characters.Remove(this);
-            }
-        }
-    }
-
-    public abstract Character FindTarget();
-    public abstract Character FindCloseTarget();
-
-    public void MoveToTarget()
-    {
-        if (alive)
-        {
-            var target = FindTarget();
-            if (target == null)
-                return;
-            if (Mathf.Abs(target.node.col - node.col) + Mathf.Abs(target.node.row - node.row) == 1)
-                return;
-            if (target.node.col == node.col && target.node.row == node.row)
-                return;
-
-            if (target.node.row > node.row && node.up.characters.Count == 0)
-            {
-                MoveUp();
-                return;
-            }
-            if (target.node.row < node.row && node.down.characters.Count == 0)
-            {
-                MoveDown();
-                return;
-            }
-            if (target.node.col > node.col && node.right.characters.Count == 0)
-            {
-                MoveRight();
-                return;
-            }
-            if (target.node.col < node.col && node.left.characters.Count == 0)
-            {
-                MoveLeft();
-                return;
-            }
-            return;
-        }
-    }
-
-    private void MoveUp()
-    {
-        SetNode(node.up);
-    }
-
-    private void MoveDown()
-    {
-        SetNode(node.down);
-    }
-
-    private void MoveRight()
-    {
-        SetNode(node.right);
-    }
-
-    private void MoveLeft()
-    {
-        SetNode(node.left);
-    }
-}
 
 public class CharacterManager : SingletonMono<CharacterManager>
 {
     #region ===== Fields =====
 
     [SerializeField]
-    private GameObject prefabAttacker = null;
+    private AxieAttacker prefabAttacker = null;
     [SerializeField]
-    private GameObject prefabDefender = null;
-
+    private AxieDefender prefabDefender = null;
+    [SerializeField]
+    private GameObject rootPrefabs = null;
     private GameObject rootAttacker = null;
     private GameObject rootDefender = null;
-    public List<Character> attackers = new List<Character>();
-    public List<Character> defenders = new List<Character>();
-    //private Vector2 size = new Vector2(10, 10);
-    private int numberAttacker = 13;
-    private int numberDefender = 14;
+    private List<AxieBase> attackers = new List<AxieBase>();
+    private List<AxieBase> defenders = new List<AxieBase>();
+    private int numberAttacker = 30;
+    private int numberDefender = 20;
+    private float durationTurn = 1f;
+    private float durationMove = 0f;
+    private float durationAttack = 0f;
 
-    //private MapManager MapManager = MapManager.Instance;
+    private int         maxHPAttacker = 0;
+    private int         hpAttacker = 0;
+
+    private int         maxHPDefender = 0;
+    private int         hpDefender = 0;
+
+    private bool endGame = false;
+    private Queue<AxieBase> queueDefender = new Queue<AxieBase>();
+    private Queue<AxieBase> queueAttacker = new Queue<AxieBase>();
+    #endregion
+
+    #region ===== Properties =====
+
+    public List<AxieBase> Defenders { get => defenders; set => defenders = value; }
+    public List<AxieBase> Attackers { get => attackers; set => attackers = value; }
+
+    #endregion
+
+    #region ===== Singletons =====
+
+    private UIManager UIManager => UIManager.Instance;
+    private MapManager MapManager => MapManager.Instance;
 
     #endregion
 
     private void Start()
     {
+        Reset();
+        Restart();
+    }
+
+    private void Reset()
+    {
         var mapManager = MapManager.Instance;
+        var random = new System.Random();
+        var numbers = Enumerable.Range(0, mapManager.Count()).OrderBy(x => random.Next());
+        var numberQ = new Queue<int>(numbers);
 
         if (rootAttacker == null)
         {
@@ -205,78 +78,177 @@ public class CharacterManager : SingletonMono<CharacterManager>
             rootDefender.transform.localPosition = Vector3.zero;
             rootDefender.transform.localRotation = Quaternion.identity;
         }
-        var random = new System.Random();
-        var numbers = Enumerable.Range(0, mapManager.Count()).ToList().OrderBy(x => random.Next());
-        var numberQ = new Queue<int>(numbers);
-        for (int i = 0; i < numberDefender; i++)
+        // Defender
         {
-            var nodeID = numberQ.Dequeue();
-            var node = mapManager.GetNode(nodeID);
-            var defender = Instantiate(prefabDefender, rootDefender.transform).AddComponent<CharacterDefender>();
-            defender.SetNode(node);
-            defenders.Add(defender);
+            for (int i = 0; i < numberDefender; i++)
+            {
+                var nodeID = numberQ.Dequeue();
+                var node = mapManager.GetNode(nodeID);
+                var data = GameManager.Instance.DataDefender;
+                var go = queueDefender.Count > 0 ? queueDefender.Dequeue() : Instantiate(prefabDefender);
+                go.transform.SetParent(rootDefender.transform);
+                var axie = go.GetComponent<AxieDefender>();
+                axie.Init(data.AxieID, data.Genes, data.HP, node);
+                defenders.Add(axie);
+            }
         }
-        for (int i = 0; i < numberAttacker; i++)
+        // Attacker
         {
-            var nodeID = numberQ.Dequeue();
-            var node = mapManager.GetNode(nodeID);
-            var targetIndex = i % defenders.Count;
-            var target = defenders[targetIndex].GetComponent<CharacterDefender>();
-            var attacker = Instantiate(prefabAttacker, rootAttacker.transform).AddComponent<CharacterAttacker>();
-            attacker.SetNode(node);
-            attackers.Add(attacker);
+            for (int i = 0; i < numberAttacker; i++)
+            {
+                var nodeID = numberQ.Dequeue();
+                var node = mapManager.GetNode(nodeID);
+                var data = GameManager.Instance.DataAttacker;
+                var go = queueAttacker.Count > 0 ? queueAttacker.Dequeue() : Instantiate(prefabAttacker);
+                go.transform.SetParent(rootAttacker.transform);
+                var axie = go.GetComponent<AxieAttacker>();
+                axie.Init(data.AxieID, data.Genes, data.HP, node);
+                attackers.Add(axie);
+            }
         }
+
+        hpDefender = maxHPDefender = defenders.Sum(x => x.HP);
+        hpAttacker = maxHPAttacker = attackers.Sum(x => x.HP);
     }
 
-    private float intervalTime = 1f;
-    private float remaindTimeMove = 1f;
-    private float remaindTimeAttack = 1f;
+    private void Restart()
+    {
+        endGame = false;
+    }
+
+    public void TeamTakeDamage(Team team, int damage)
+    {
+        switch (team)
+        {
+            case Team.Attacker:
+                {
+                    hpAttacker -= damage;
+                    hpAttacker = Math.Max(hpAttacker, 0);
+                    UIManager.UpdateHPBar(team:     team,
+                                          value:    1f * hpAttacker / maxHPAttacker,
+                                          text:     $"{hpAttacker} / {maxHPAttacker}");
+                }
+                break;
+            case Team.Defender:
+                {
+                    hpDefender -= damage;
+                    hpDefender = Math.Max(hpDefender, 0);
+                    UIManager.UpdateHPBar(team:     team,
+                                          value:    1f * hpDefender / maxHPDefender,
+                                          text:     $"{hpDefender} / {maxHPDefender}");
+                }
+                break;
+        }
+    }
 
     // Update is called once per frame
     void Update()
     {
-        if (remaindTimeMove <= 0 && remaindTimeAttack <= 0)
+        if (endGame)
+            return;
+
+        if (durationMove > 0)
         {
-            remaindTimeMove = intervalTime / 2;
-            remaindTimeAttack = intervalTime / 2;
+            durationMove -= Time.deltaTime;
+            if (durationMove > 0)
+                return;
+
+            foreach (var attacker in attackers)
+            {
+                attacker.DealDamage();
+            }
+            foreach (var defender in defenders)
+            {
+                defender.DealDamage();
+            }
+            return;
+        }
+
+        if (durationAttack > 0)
+        {
+            durationAttack -= Time.deltaTime;
+            if (durationAttack > 0)
+                return;
+
+            foreach (var attacker in attackers)
+            {
+                attacker.CheckHealth();
+            }
+            foreach (var defender in defenders)
+            {
+                defender.CheckHealth();
+            }
+            return;
+        }
+
+        // Start Turn
+        if (hpAttacker == 0 && hpDefender == 0)
+        {
+            // Draw
+            endGame = true;
+            StartCoroutine(ShowResult(ResultType.Draw));
+        }
+        else if (hpAttacker == 0)
+        {
+            // Defender Win
+            endGame = true;
+            StartCoroutine(ShowResult(ResultType.WinDefender));
+        }
+        else if (hpDefender == 0)
+        {
+            // Attacker Win
+            endGame = true;
+            StartCoroutine(ShowResult(ResultType.WinAttacker));
+        }
+        else
+        {
+            durationMove    = durationTurn / 2;
+            durationAttack  = durationTurn / 2;
             foreach (var attacker in attackers)
             {
                 attacker.MoveToTarget();
             }
+            return;
         }
-        else if (remaindTimeMove > 0)
+    }
+
+    public List<AxieBase> GetEnemies(Team team)
+    {
+        return team switch
         {
-            remaindTimeMove -= Time.deltaTime;
-            if (remaindTimeMove <= 0)
-            {
-                foreach (var attacker in attackers)
-                {
-                    attacker.DealDamage();
-                }
-                foreach (var defender in defenders)
-                {
-                    defender.DealDamage();
-                }
-            }
-        }
-        else
-        {
-            remaindTimeAttack -= Time.deltaTime;
-            if (remaindTimeMove <= 0)
-            {
-                foreach (var attacker in attackers)
-                {
-                    attacker.CheckHealth();
-                }
-                foreach (var defender in defenders)
-                {
-                    defender.CheckHealth();
-                }
-            }
-        }
+            Team.Attacker   => defenders,
+            Team.Defender   => attackers,
+            _               => null
+        };
     }
 
     protected override void Init()
     {
+    }
+
+    private IEnumerator ShowResult(ResultType resultType)
+    {
+        // Axie Pool
+        foreach (var defender in defenders)
+        {
+            defender.transform.SetParent(rootPrefabs.transform);
+            queueDefender.Enqueue(defender);
+        }
+        defenders.Clear();
+        foreach (var attacker in attackers)
+        {
+            attacker.transform.SetParent(rootPrefabs.transform);
+            queueAttacker.Enqueue(attacker);
+        }
+        attackers.Clear();
+        // Result
+        UIManager.ShowResult(resultType);
+        yield return new WaitForSeconds(2);
+        UIManager.HideResult();
+        // Restart
+        MapManager.Reset();
+        Reset();
+        yield return new WaitForSeconds(1);
+        Restart();
     }
 }

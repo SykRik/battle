@@ -47,16 +47,5 @@ public class HealthBar : MonoBehaviour
         }
     }
 
-    //private void Update()
-    //{
-    //    if (Input.GetKeyUp(KeyCode.Space))
-    //    {
-    //        var value   = bar.fillAmount > 0 
-    //                    ? Mathf.Clamp01(bar.fillAmount - 0.1f) 
-    //                    : 1f;
-    //        SetValue(value);
-    //    }
-    //}
-
     #endregion
 }

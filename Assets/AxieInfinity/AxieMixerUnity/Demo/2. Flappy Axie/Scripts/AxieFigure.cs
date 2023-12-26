@@ -36,7 +36,7 @@ namespace Game
             Mixer.Init();
             Mixer.SpawnSkeletonAnimation(skeletonAnimation, id, genes);
 
-            skeletonAnimation.transform.localPosition = new Vector3(0f, -0.32f, 0f);
+            skeletonAnimation.transform.localPosition = new Vector3(0f, -0.5f, 0f);
             skeletonAnimation.transform.SetParent(transform, false);
             skeletonAnimation.transform.localScale = new Vector3(1, 1, 1);
             skeletonAnimation.skeleton.ScaleX = (_flipX ? -1 : 1) * Mathf.Abs(skeletonAnimation.skeleton.ScaleX);
