@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class MapManager : SingletonMono<MapManager>
 {
-    [SerializeField]
-    private SpriteRenderer spriteRenderer;
+    //[SerializeField]
+    //private SpriteRenderer map;
     [SerializeField]
     private int numberCOL = 0;
     [SerializeField]
@@ -13,9 +13,9 @@ public class MapManager : SingletonMono<MapManager>
 
     private Dictionary<int, Node> nodes = new Dictionary<int, Node>();
 
-    protected override void Init()
+    public override void Init()
     {
-        spriteRenderer.size = new Vector2(numberCOL, numberROW);
+        //map.size = new Vector2(numberCOL, numberROW);
 
         for (int row = 0; row < numberROW; row++)
         {

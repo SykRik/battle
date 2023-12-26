@@ -5,9 +5,8 @@ public class PoolManager : SingletonMono<PoolManager>
 {
     private readonly Dictionary<GameObject, List<GameObject>> poolDictionary = new Dictionary<GameObject, List<GameObject>>();
 
-    protected override void Init()
+    public override void Init()
     {
-        throw new System.NotImplementedException();
     }
 
     public GameObject GetObject(GameObject prefab)

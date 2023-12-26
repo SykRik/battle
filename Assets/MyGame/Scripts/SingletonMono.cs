@@ -19,7 +19,7 @@ public abstract class SingletonMono<T> : MonoBehaviour
                         var name    = $"{typeof(T)}(Singleton)";
                         var go      = new GameObject(name);
                         instance    = go.AddComponent<T>();
-                        instance.Init();
+                        //instance.Init();
                         DontDestroyOnLoad(go);
                     }
                 }
@@ -38,10 +38,10 @@ public abstract class SingletonMono<T> : MonoBehaviour
         else
         {
             instance = this as T;
-            instance.Init();
+            //instance.Init();
             DontDestroyOnLoad(gameObject);
         }
     }
 
-    protected abstract void Init();
+    public abstract void Init();
 }

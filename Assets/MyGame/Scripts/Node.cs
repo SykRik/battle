@@ -5,27 +5,35 @@ public class Node
 {
     #region ===== Fields =====
 
-    public int id = -1;
-    public int row = 0;
-    public int col = 0;
-    public Vector3 pos = Vector3.zero;
-    public Node up = null;
-    public Node down = null;
-    public Node left = null;
-    public Node right = null;
     private readonly List<AxieBase> characters = new List<AxieBase>();
+    private int id = -1;
+    private int row = 0;
+    private int col = 0;
+    private Vector3 pos = Vector3.zero;
+    private Node up = null;
+    private Node down = null;
+    private Node left = null;
+    private Node right = null;
 
     #endregion
 
     #region ===== Properties =====
 
     public List<AxieBase> Characters => characters;
+    public int      Row     => row;
+    public int      Col     => col;
+    public Vector3  Pos     => pos;
+    public Node     Up      => up;
+    public Node     Down    => down;
+    public Node     Left    => left;
+    public Node     Right   => right;
 
     #endregion
 
     #region ===== Singletons =====
 
     private MapManager MapManager => MapManager.Instance;
+
 
     #endregion
 

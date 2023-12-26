@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
 public enum Team
 {
@@ -57,7 +56,7 @@ public abstract class AxieBase : MonoBehaviour
         healthBar.SetValue(1f);
         if (node != null)
         {
-            transform.localPosition = node.pos;
+            transform.localPosition = node.Pos;
             node.Enter(this);
         }
         {
@@ -72,7 +71,7 @@ public abstract class AxieBase : MonoBehaviour
             skeletonAnimation.state.End += SpineEndHandler;
             
             var scaleXabs = Mathf.Abs(skeletonAnimation.skeleton.ScaleX);
-            var scaleX = node.pos.x > 0 ? 1 : -1;
+            var scaleX = node.Pos.x > 0 ? 1 : -1;
             skeletonAnimation.skeleton.ScaleX = scaleX * scaleXabs;
             DoAnimation(AnimationEnum.IDLE_NORMAL);
         }
@@ -99,20 +98,6 @@ public abstract class AxieBase : MonoBehaviour
             var target = FindCloseTarget();
             if (target != null)
             {
-                if (target.Node.col == node.col)
-                {
-                    var animation   = GetComponentInChildren<SkeletonAnimation>();
-                    var scaleXabs   = Mathf.Abs(animation.skeleton.ScaleX);
-                    var scaleX      = target.Node.row > node.row ? -1 : 1;
-                    animation.skeleton.ScaleX = scaleX * scaleXabs;
-                }
-                else
-                {
-                    var animation   = GetComponentInChildren<SkeletonAnimation>();
-                    var scaleXabs   = Mathf.Abs(animation.skeleton.ScaleX);
-                    var scaleX      = target.Node.col > node.col ? -1 : 1;
-                    animation.skeleton.ScaleX = scaleX * scaleXabs;
-                }
                 var factor = (number - target.number + 3) % 3;
                 var damage = factor switch
                 {
@@ -121,6 +106,7 @@ public abstract class AxieBase : MonoBehaviour
                     2 => 3,
                     _ => throw new NotImplementedException()
                 };
+                LookToTarget(target);
                 DoAnimation(AnimationEnum.NORMAL_ATTACK);
                 target.TakeDamage(damage);
             }
@@ -136,7 +122,7 @@ public abstract class AxieBase : MonoBehaviour
                 var dmg = hp > damage ? damage : hp;
                 hp -= dmg;
                 healthBar.SetValue(1f * hp / maxHP);
-                CharacterManager.Instance.TeamTakeDamage(team, dmg);
+                AxieManager.Instance.UpdateTeamHP(team, dmg);
             }
         }
     }
@@ -166,49 +152,36 @@ public abstract class AxieBase : MonoBehaviour
             }
             else
             {
-                if (target.Node.col == node.col)
-                {
-                    var animation   = GetComponentInChildren<SkeletonAnimation>();
-                    var scaleXabs   = Mathf.Abs(animation.skeleton.ScaleX);
-                    var scaleX      = target.Node.row > node.row ? -1 : 1;
-                    animation.skeleton.ScaleX = scaleX * scaleXabs;
-                }
-                else
-                {
-                    var animation   = GetComponentInChildren<SkeletonAnimation>();
-                    var scaleXabs   = Mathf.Abs(animation.skeleton.ScaleX);
-                    var scaleX      = target.Node.col > node.col ? -1 : 1;
-                    animation.skeleton.ScaleX = scaleX * scaleXabs;
-                }
+                LookToTarget(target);
             }
-            if (Mathf.Abs(target.node.col - node.col) + Mathf.Abs(target.node.row - node.row) == 1)
+            if (Mathf.Abs(target.node.Col - node.Col) + Mathf.Abs(target.node.Row - node.Row) == 1)
             {
                 Idle();
                 return;
             }
-            if (target.node.col == node.col && target.node.row == node.row)
+            if (target.node.Col == node.Col && target.node.Row == node.Row)
             {
                 Idle();
                 return;
             }
-            if (target.node.row > node.row && node.up.IsVacant())
+            if (target.node.Row > node.Row && node.Up.IsVacant())
             {
-                MoveTo(node.up);
+                Move(node.Up);
                 return;
             }
-            if (target.node.row < node.row && node.down.IsVacant())
+            if (target.node.Row < node.Row && node.Down.IsVacant())
             {
-                MoveTo(node.down);
+                Move(node.Down);
                 return;
             }
-            if (target.node.col > node.col && node.right.IsVacant())
+            if (target.node.Col > node.Col && node.Right.IsVacant())
             {
-                MoveTo(node.right);
+                Move(node.Right);
                 return;
             }
-            if (target.node.col < node.col && node.left.IsVacant())
+            if (target.node.Col < node.Col && node.Left.IsVacant())
             {
-                MoveTo(node.left);
+                Move(node.Left);
                 return;
             }
             // Default
@@ -219,7 +192,28 @@ public abstract class AxieBase : MonoBehaviour
         }
     }
 
-    public void DoAnimation(AnimationEnum animationType)
+    private void LookToTarget(AxieBase target)
+    {
+        if (target == null)
+            return;
+
+        if (target.Node.Col == node.Col)
+        {
+            var animation = GetComponentInChildren<SkeletonAnimation>();
+            var scaleXabs = Mathf.Abs(animation.skeleton.ScaleX);
+            var scaleX = target.Node.Row > node.Row ? -1 : 1;
+            animation.skeleton.ScaleX = scaleX * scaleXabs;
+        }
+        else
+        {
+            var animation = GetComponentInChildren<SkeletonAnimation>();
+            var scaleXabs = Mathf.Abs(animation.skeleton.ScaleX);
+            var scaleX = target.Node.Col > node.Col ? -1 : 1;
+            animation.skeleton.ScaleX = scaleX * scaleXabs;
+        }
+    }
+
+    private void DoAnimation(AnimationEnum animationType)
     {
         var parameter = animationType switch
         {
@@ -240,7 +234,7 @@ public abstract class AxieBase : MonoBehaviour
         skeleton.AnimationState.SetAnimation(0, animationName, loop);
     }
 
-    private void MoveTo(Node targetNode)
+    private void Move(Node targetNode)
     {
         if (targetNode == null)
             return;
@@ -250,7 +244,7 @@ public abstract class AxieBase : MonoBehaviour
         node?.Enter(this);
         // Play anim move
         DoAnimation(AnimationEnum.MOVE_FORWARD);
-        LeanTween.moveLocal(gameObject, targetNode.pos, 0.5f);
+        LeanTween.moveLocal(gameObject, targetNode.Pos, 0.5f);
     }
 
     private void Idle()
@@ -259,10 +253,9 @@ public abstract class AxieBase : MonoBehaviour
         DoAnimation(AnimationEnum.IDLE_NORMAL);
     }
 
-
     public AxieBase FindTarget()
     {
-        var targetsAll      = CharacterManager.Instance.GetEnemies(team);
+        var targetsAll      = AxieManager.Instance.GetEnemies(team);
         var targetsLive     = targetsAll?.Where(x => x.HP > 0).ToList();
         var targetsClose    = targetsLive?.OrderBy(x => node.Distance(x.Node)).ToList();
 
@@ -276,14 +269,14 @@ public abstract class AxieBase : MonoBehaviour
         var random  = new System.Random();
         var targets = new List<AxieBase>();
 
-        if (node.up != null)
-            targets.AddRange(node.up.Characters);
-        if (node.down != null)
-            targets.AddRange(node.down.Characters);
-        if (node.right != null)
-            targets.AddRange(node.right.Characters);
-        if (node.left != null)
-            targets.AddRange(node.left.Characters);
+        if (node.Up != null)
+            targets.AddRange(node.Up.Characters);
+        if (node.Down != null)
+            targets.AddRange(node.Down.Characters);
+        if (node.Right != null)
+            targets.AddRange(node.Right.Characters);
+        if (node.Left != null)
+            targets.AddRange(node.Left.Characters);
 
         return targets.Where(x => x.Team != Team)
                       .OrderBy(x => random.Next())

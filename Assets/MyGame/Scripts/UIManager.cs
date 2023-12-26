@@ -30,13 +30,23 @@ public class UIManager : SingletonMono<UIManager>
     private HealthBar healthBarDefender = null;
     [SerializeField]
     private Text textDefender = null;
+    [SerializeField]
+    private Slider sliderZoom = null;
+
+    #endregion
+
+    #region ===== Singletons =====
+
+    GameManager GameManager => GameManager.Instance;
 
     #endregion
 
     #region ===== Methods =====
 
-    protected override void Init()
+    public override void Init()
     {
+        sliderZoom.onValueChanged.AddListener(OnValueChangeZoom);
+        Reset();
     }
 
     public void ShowResult(ResultType resultType)
@@ -65,6 +75,39 @@ public class UIManager : SingletonMono<UIManager>
                 healthBarDefender.SetValue(value);
                 break;
         }
+    }
+
+    public void Reset()
+    {
+        result.SetActive(false);
+        draw.SetActive(false);
+        winA.SetActive(false);
+        winD.SetActive(false);
+
+        textAttacker.text = string.Empty;
+        healthBarAttacker.SetValue(1f);
+        textDefender.text = string.Empty;
+        healthBarDefender.SetValue(1f);
+    }
+
+    public void OnClickSpeed1()
+    {
+        GameManager.SetTimeScale(1f);
+    }
+
+    public void OnClickSpeed2()
+    {
+        GameManager.SetTimeScale(2f);
+    }
+
+    public void OnClickSpeed3()
+    {
+        GameManager.SetTimeScale(3f);
+    }
+
+    private void OnValueChangeZoom(float value)
+    {
+        Camera.main.orthographicSize = 6f - (3f * value);
     }
 
     #endregion

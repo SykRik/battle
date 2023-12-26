@@ -4,62 +4,61 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class CharacterManager : SingletonMono<CharacterManager>
+public class AxieManager : SingletonMono<AxieManager>
 {
     #region ===== Fields =====
 
-    [SerializeField]
-    private AxieAttacker prefabAttacker = null;
-    [SerializeField]
-    private AxieDefender prefabDefender = null;
-    [SerializeField]
-    private GameObject rootPrefabs = null;
-    private GameObject rootAttacker = null;
-    private GameObject rootDefender = null;
-    private List<AxieBase> attackers = new List<AxieBase>();
-    private List<AxieBase> defenders = new List<AxieBase>();
-    private int numberAttacker = 30;
-    private int numberDefender = 20;
-    private float durationTurn = 1f;
-    private float durationMove = 0f;
-    private float durationAttack = 0f;
+    private readonly List<AxieBase>  attackers       = new List<AxieBase>();
+    private readonly List<AxieBase>  defenders       = new List<AxieBase>();
+    private readonly Queue<AxieBase> queueDefender   = new Queue<AxieBase>();
+    private readonly Queue<AxieBase> queueAttacker   = new Queue<AxieBase>();
 
-    private int         maxHPAttacker = 0;
-    private int         hpAttacker = 0;
-
-    private int         maxHPDefender = 0;
-    private int         hpDefender = 0;
-
-    private bool endGame = false;
-    private Queue<AxieBase> queueDefender = new Queue<AxieBase>();
-    private Queue<AxieBase> queueAttacker = new Queue<AxieBase>();
+    [SerializeField]
+    private AxieAttacker    prefabAttacker  = null;
+    [SerializeField]
+    private AxieDefender    prefabDefender  = null;
+    [SerializeField]
+    private GameObject      rootPrefabs     = null;
+    private GameObject      rootAttacker    = null;
+    private GameObject      rootDefender    = null;
+    private int             numberAttacker  = 30;
+    private int             numberDefender  = 20;
+    private float           durationTurn    = 2f;
+    private float           durationMove    = 0f;
+    private float           durationAttack  = 0f;
+    private int             maxHPAttacker   = 0;
+    private int             hpAttacker      = 0;
+    private int             maxHPDefender   = 0;
+    private int             hpDefender      = 0;
+    private bool            endGame         = true;
     #endregion
 
     #region ===== Properties =====
 
-    public List<AxieBase> Defenders { get => defenders; set => defenders = value; }
-    public List<AxieBase> Attackers { get => attackers; set => attackers = value; }
+    public List<AxieBase> Defenders => defenders;
+    public List<AxieBase> Attackers => attackers;
 
     #endregion
 
     #region ===== Singletons =====
 
-    private UIManager UIManager => UIManager.Instance;
-    private MapManager MapManager => MapManager.Instance;
+    private GameManager GameManager => GameManager.Instance;
+    private UIManager   UIManager   => UIManager.Instance;
+    private MapManager  MapManager  => MapManager.Instance;
 
     #endregion
 
-    private void Start()
+    #region ===== Methods =====
+
+    public override void Init()
     {
         Reset();
-        Restart();
     }
-
-    private void Reset()
+    
+    public void Reset()
     {
-        var mapManager = MapManager.Instance;
         var random = new System.Random();
-        var numbers = Enumerable.Range(0, mapManager.Count()).OrderBy(x => random.Next());
+        var numbers = Enumerable.Range(0, MapManager.Count()).OrderBy(x => random.Next());
         var numberQ = new Queue<int>(numbers);
 
         if (rootAttacker == null)
@@ -83,7 +82,7 @@ public class CharacterManager : SingletonMono<CharacterManager>
             for (int i = 0; i < numberDefender; i++)
             {
                 var nodeID = numberQ.Dequeue();
-                var node = mapManager.GetNode(nodeID);
+                var node = MapManager.GetNode(nodeID);
                 var data = GameManager.Instance.DataDefender;
                 var go = queueDefender.Count > 0 ? queueDefender.Dequeue() : Instantiate(prefabDefender);
                 go.transform.SetParent(rootDefender.transform);
@@ -97,7 +96,7 @@ public class CharacterManager : SingletonMono<CharacterManager>
             for (int i = 0; i < numberAttacker; i++)
             {
                 var nodeID = numberQ.Dequeue();
-                var node = mapManager.GetNode(nodeID);
+                var node = MapManager.GetNode(nodeID);
                 var data = GameManager.Instance.DataAttacker;
                 var go = queueAttacker.Count > 0 ? queueAttacker.Dequeue() : Instantiate(prefabAttacker);
                 go.transform.SetParent(rootAttacker.transform);
@@ -107,38 +106,11 @@ public class CharacterManager : SingletonMono<CharacterManager>
             }
         }
 
-        hpDefender = maxHPDefender = defenders.Sum(x => x.HP);
-        hpAttacker = maxHPAttacker = attackers.Sum(x => x.HP);
-    }
-
-    private void Restart()
-    {
-        endGame = false;
-    }
-
-    public void TeamTakeDamage(Team team, int damage)
-    {
-        switch (team)
-        {
-            case Team.Attacker:
-                {
-                    hpAttacker -= damage;
-                    hpAttacker = Math.Max(hpAttacker, 0);
-                    UIManager.UpdateHPBar(team:     team,
-                                          value:    1f * hpAttacker / maxHPAttacker,
-                                          text:     $"{hpAttacker} / {maxHPAttacker}");
-                }
-                break;
-            case Team.Defender:
-                {
-                    hpDefender -= damage;
-                    hpDefender = Math.Max(hpDefender, 0);
-                    UIManager.UpdateHPBar(team:     team,
-                                          value:    1f * hpDefender / maxHPDefender,
-                                          text:     $"{hpDefender} / {maxHPDefender}");
-                }
-                break;
-        }
+        hpDefender      = maxHPDefender = defenders.Sum(x => x.HP);
+        hpAttacker      = maxHPAttacker = attackers.Sum(x => x.HP);
+        durationMove    = durationTurn / 2;
+        durationAttack  = durationTurn / 2;
+        endGame         = false;
     }
 
     // Update is called once per frame
@@ -202,8 +174,8 @@ public class CharacterManager : SingletonMono<CharacterManager>
         }
         else
         {
-            durationMove    = durationTurn / 2;
-            durationAttack  = durationTurn / 2;
+            durationMove = durationTurn / 2;
+            durationAttack = durationTurn / 2;
             foreach (var attacker in attackers)
             {
                 attacker.MoveToTarget();
@@ -212,18 +184,39 @@ public class CharacterManager : SingletonMono<CharacterManager>
         }
     }
 
+    public void UpdateTeamHP(Team team, int damage)
+    {
+        switch (team)
+        {
+            case Team.Attacker:
+                {
+                    hpAttacker -= damage;
+                    hpAttacker = Math.Max(hpAttacker, 0);
+                    UIManager.UpdateHPBar(team: team,
+                                          value: 1f * hpAttacker / maxHPAttacker,
+                                          text: $"{hpAttacker} / {maxHPAttacker}");
+                }
+                break;
+            case Team.Defender:
+                {
+                    hpDefender -= damage;
+                    hpDefender = Math.Max(hpDefender, 0);
+                    UIManager.UpdateHPBar(team: team,
+                                          value: 1f * hpDefender / maxHPDefender,
+                                          text: $"{hpDefender} / {maxHPDefender}");
+                }
+                break;
+        }
+    }
+
     public List<AxieBase> GetEnemies(Team team)
     {
         return team switch
         {
-            Team.Attacker   => defenders,
-            Team.Defender   => attackers,
-            _               => null
+            Team.Attacker => defenders,
+            Team.Defender => attackers,
+            _ => null
         };
-    }
-
-    protected override void Init()
-    {
     }
 
     private IEnumerator ShowResult(ResultType resultType)
@@ -243,12 +236,10 @@ public class CharacterManager : SingletonMono<CharacterManager>
         attackers.Clear();
         // Result
         UIManager.ShowResult(resultType);
-        yield return new WaitForSeconds(2);
+        yield return new WaitForSeconds(3);
         UIManager.HideResult();
-        // Restart
-        MapManager.Reset();
-        Reset();
-        yield return new WaitForSeconds(1);
-        Restart();
+        GameManager.Reset();
     }
+
+    #endregion
 }
