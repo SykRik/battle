@@ -107,7 +107,7 @@ public class UIManager : SingletonMono<UIManager>
 
     private void OnValueChangeZoom(float value)
     {
-        Camera.main.orthographicSize = 6f - (3f * value);
+        Camera.main.orthographicSize = 7f - (4f * value);
     }
 
     #endregion
